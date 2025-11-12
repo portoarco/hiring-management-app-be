@@ -1,0 +1,108 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum USER_ROLE {
+  RECRUITER
+  APPLICANT
+}
+
+enum GENDER {
+  MALE
+  FEMALE
+}
+
+enum VACANCY_TYPE {
+  FULLTIME
+  PARTTIME
+  CONTRACT
+  FREELANCE
+  INTERNSHIP
+}
+
+enum VACANCY_STATUS {
+  ACTIVE
+  INACTIVE
+  DRAFT
+}
+
+enum REQUIREMENT_STATUS {
+  MANDATORY
+  OPTIONAL
+  OFF
+}
+
+model Users {
+  id            String         @id @default(uuid())
+  full_name     String?
+  role          USER_ROLE      @default(APPLICANT)
+  date_of_birth String?
+  gender        GENDER?
+  domicile      String?
+  phone         String?        @unique
+  email         String         @unique
+  password      String?
+  linkedin_url  String?
+  avatar        String?
+  company_id    Int?
+  created_at    DateTime       @default(now())
+  application   Applications[]
+  company       Company?       @relation(fields: [company_id], references: [id], onDelete: Cascade)
+}
+
+model Applications {
+  id         Int       @id @default(autoincrement())
+  user_id    String
+  vacancy_id Int
+  created_at DateTime  @default(now())
+  user       Users?    @relation(fields: [user_id], references: [id])
+  vacancy    Vacancies @relation(fields: [vacancy_id], references: [id], onDelete: Cascade)
+}
+
+model Company {
+  id         Int         @id @default(autoincrement())
+  name       String
+  logo       String
+  created_at DateTime    @default(now())
+  user       Users[]
+  vacancy    Vacancies[]
+}
+
+model Vacancies {
+  id           Int            @id @default(autoincrement())
+  company_id   Int
+  position     String
+  type         VACANCY_TYPE
+  jobdesc      String
+  placement    String
+  min_salary   Int
+  max_salary   Int
+  status       VACANCY_STATUS @default(DRAFT)
+  started_at   DateTime
+  created_at   DateTime       @default(now())
+  application  Applications[]
+  company      Company        @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  requirements Requirements[]
+}
+
+model Requirements {
+  id         Int                @id @default(autoincrement())
+  vacancy_id Int
+  field_name String
+  status     REQUIREMENT_STATUS
+  created_at DateTime           @default(now())
+  vacancy    Vacancies          @relation(fields: [vacancy_id], references: [id], onDelete: Cascade)
+}
